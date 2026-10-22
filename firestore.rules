@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore { match /databases/{db}/documents {
+  function admin(){ return request.auth.token.email in ['you@example.com']; } // same emails as ADMINS
+  match /users/{u} {
+    allow read: if request.auth != null;
+    allow create: if request.auth.uid == u && request.resource.data.balance == 200;
+    allow update: if admin() || (request.auth.uid == u &&
+      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lineup','formation','name']));
+  }
+  match /matches/{m} { allow read: if request.auth != null;
+    allow create: if admin() || (request.auth.uid == request.resource.data.by && request.resource.data.status == 'pending');
+    allow update, delete: if admin(); }
+  match /{c}/{d} { allow read: if request.auth != null; allow write: if admin(); }
+}}
